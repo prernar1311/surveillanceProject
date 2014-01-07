@@ -22,20 +22,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
+        <!-- activity
             android:name="com.pns.touchdatacollector.DisplayMessageActivity"
             android:label="@string/title_activity_display_message"
             android:parentActivityName="com.pns.touchdatacollector.MainActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.pns.touchdatacollector.MainActivity" />
-        </activity>
-        <activity
-            android:name="com.pns.touchdatacollector.InputCollector"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/title_activity_input_collector"
-            android:theme="@style/FullscreenTheme" >
-        </activity>
+        </activity -->
     </application>
 
 </manifest>
