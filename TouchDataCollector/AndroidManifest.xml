@@ -3,7 +3,6 @@
     package="com.pns.touchdatacollector"
     android:versionCode="1"
     android:versionName="1.0" >
-
     <uses-sdk
         android:minSdkVersion="14"
         android:targetSdkVersion="18" />
@@ -22,8 +21,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.pns.touchdatacollector.KeyboardEntryActivity" />
         <!-- activity
-            android:name="com.pns.touchdatacollector.DisplayMessageActivity"
+            android:name="com.pns.touchdatacollecto.DisplayMessageActivity"
             android:label="@string/title_activity_display_message"
             android:parentActivityName="com.pns.touchdatacollector.MainActivity" >
             <meta-data
@@ -31,6 +32,5 @@
                 android:value="com.pns.touchdatacollector.MainActivity" />
         </activity -->
     </application>
-
 </manifest>
 
