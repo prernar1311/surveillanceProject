@@ -10,14 +10,13 @@
  */
 package com.pns.touchcollector;
 
-import android.content.Context;
 import android.media.MediaRecorder;
 import android.os.Environment;
 import android.util.Log;
 
 import java.io.IOException;
 
-import com.pns.touchcollector.InputCollection.DataCollector;
+import com.pns.touchcollector.DataCollection.DataCollector;
 
 /** Record audio from the MIC audio source. Procedure:
  *
