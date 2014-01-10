@@ -20,6 +20,15 @@ android {
         minSdkVersion 14
         targetSdkVersion 17
     }
+
+    sourceSets {
+        main {
+            java {
+                    exclude '**/AudioRecorderExample.java'
+                    exclude '**/AccelerometerReader.java'
+            }
+        }
+    }
 }
 
 dependencies {
