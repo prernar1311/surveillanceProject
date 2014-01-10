@@ -20,7 +20,7 @@ public class AccessGyroscope extends DataStreamCollector<SensorEvent> implements
          *  the callbacks defined in this class, and gather the sensor
          *  information as quickly as possible */
         sManager.registerListener(this,
-            sManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE),
+            sManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
             SensorManager.SENSOR_DELAY_FASTEST);
     }
 
