@@ -3,6 +3,7 @@ package com.pns.touchcollector;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -89,7 +90,7 @@ public class InputCollection extends Activity {
 
         public static class TextInputFragment extends Fragment {
             protected static final int layout_id = R.layout.fragment_keyboard_entry;
-            Activity activity;
+            Context context;
             DataCollection dc;
             View view;
 
@@ -98,7 +99,7 @@ public class InputCollection extends Activity {
             @Override
             public void onAttach(Activity activity) {
                 super.onAttach(activity);
-                this.activity = activity;
+                this.context = activity;
             }
 
             // Button Grid input view
@@ -120,13 +121,17 @@ public class InputCollection extends Activity {
                 }
                 EditTextKeyRegister etkr = ((EditTextKeyRegister)
                         this.view.findViewById(R.id.numeric_editText));
-                if (this.activity == null) {
-                    throw new IllegalStateException("Activity not available.");
-                }
                 if (etkr == null) {
+                        throw new IllegalStateException("Activity not available.");
+                }
+                if (context == null)
+                    context = getActivity();
+                if (context == null)
+                    context = view.getContext();
+                if (context == null) {
                     throw new IllegalStateException("Activity not available.");
                 }
-                dc = new DataCollection(this.activity, etkr);
+                dc = new DataCollection(context, etkr);
                 dc.start();
             }
 
