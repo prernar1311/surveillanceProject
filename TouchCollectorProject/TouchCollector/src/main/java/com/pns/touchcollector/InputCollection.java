@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
-class InputCollection extends Activity {
+public class InputCollection extends Activity {
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -51,9 +51,8 @@ class InputCollection extends Activity {
         mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager = (ViewPager) findViewById(R.id.aic_pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-
     }
 
 
@@ -121,7 +120,6 @@ class InputCollection extends Activity {
         List<SensorEvent> accelEvents;
         String recordingFilename;
         long startTime;
-
 
         public DataCollectorSessionManager(Context context) {
             sManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
@@ -220,7 +218,7 @@ class InputCollection extends Activity {
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
+    public static class SectionsPagerAdapter extends FragmentPagerAdapter {
         TextInputFragment tif = new TextInputFragment();
         ButtonGridFragment bgf = new ButtonGridFragment();
 
@@ -232,21 +230,12 @@ class InputCollection extends Activity {
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-            if (position == 1) return new ButtonGridFragment();
-            return new TextInputFragment();
+            return (position == 1) ? new ButtonGridFragment() : new TextInputFragment();
         }
 
-        /**
-         * {@link Fragment} Superclass handling the data collection tasks common to both of our
-         * views - microphone, gyroscope, accelerometer, anything else that may come up. Subclasses
-         * should
-         */
-        //public class SurveilDataFragment extends Fragment {
-        //    @Override
-        //public View onCreateView(Layou)
-        //}
+        public static class TextInputFragment extends Fragment {
+            public TextInputFragment() { super(); }
 
-        public class TextInputFragment extends Fragment {
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -254,16 +243,27 @@ class InputCollection extends Activity {
                 // Inflate the layout for this fragment
                 return inflater.inflate(R.layout.fragment_keyboard_entry, container, false);
             }
+
+            @Override
+            public void onPause() {
+                super.onPause();
+            }
         }
 
-        public class ButtonGridFragment extends Fragment {
+        public static class ButtonGridFragment extends Fragment {
+            public ButtonGridFragment() {  super(); }
+
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
                     Bundle savedInstanceState) {
                 // Inflate the layout for this fragment
-                return inflater.inflate(R.layout.activity_button_grid_layout, container, false);
+                //return inflater.inflate(R.layout.activity_button_grid_layout, container, false);
+                return inflater.inflate(R.layout.numeric_input, container, false);
             }
+
+            @Override
+            public void onPause() {super.onPause();}
         }
 
         @Override
@@ -274,7 +274,8 @@ class InputCollection extends Activity {
 
         @Override
         public CharSequence getPageTitle(int position) {
-            Locale l = Locale.getDefault();
+            return "Title";
+            /* Locale l = Locale.getDefault();
             switch (position) {
                 case 0:
                     return getString(R.string.title_section1).toUpperCase(l);
@@ -283,7 +284,7 @@ class InputCollection extends Activity {
                 case 2:
                     return getString(R.string.title_section3).toUpperCase(l);
             }
-            return null;
+            return null;*/
         }
     }
 
@@ -310,13 +311,14 @@ class InputCollection extends Activity {
         }
 
         public PlaceholderFragment() {
+            super();
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_input_collection, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+            TextView textView = (TextView) rootView.findViewById(R.id.fic_section_label);
             textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
             return rootView;
         }
