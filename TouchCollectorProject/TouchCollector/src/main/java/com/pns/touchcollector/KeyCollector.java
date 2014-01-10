@@ -2,7 +2,6 @@ package com.pns.touchcollector;
 
 import android.view.KeyEvent;
 
-import com.pns.touchcollector.DataCollection.DataStreamCollector;
 import com.pns.touchcollector.KeyCollector.KeyCodeEvent;
 
 /**

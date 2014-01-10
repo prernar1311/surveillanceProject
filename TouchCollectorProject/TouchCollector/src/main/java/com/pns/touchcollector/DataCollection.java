@@ -77,29 +77,6 @@ public class DataCollection {
         public Data getData();
     }
 
-    static abstract class DataStreamCollector<Event> implements DataCollector<ArrayList<Event>> {
-        private final LinkedBlockingQueue<Event> q = new LinkedBlockingQueue<Event>();
-        protected void registerEvent(Event d) {
-            try {
-                q.put(d);
-            } catch (InterruptedException e) {
-                try {
-                    q.put(d);
-                } catch (InterruptedException f) {
-                    Log.e("DataStreamCollector",
-                            "Interrupted while trying to enqueue event " + d.toString(), e);
-                }
-            }
-        }
-
-        /** Flushes old data and returns in an ordered list. */
-        public List<Event> getData() {
-            List<Event> l = new ArrayList<Event>();
-            q.drainTo(l);
-            return l;
-        }
-    }
-
     static class DataSession {
         private final List<SensorEvent> gyro;
         private final List<SensorEvent> accel;

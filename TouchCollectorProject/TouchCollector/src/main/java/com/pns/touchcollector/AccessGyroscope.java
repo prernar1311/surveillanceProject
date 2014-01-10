@@ -5,8 +5,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
-import com.pns.touchcollector.DataCollection.DataStreamCollector;
-
 public class AccessGyroscope extends DataStreamCollector<SensorEvent> implements
         SensorEventListener {
     private final SensorManager sManager;
