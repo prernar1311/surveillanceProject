@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Type away!"
-        android:id="@+id/fke_textView"
+        android:id="@+id/numeric_textView"
         android:layout_centerHorizontal="true"
         android:textSize="18dp"
         android:minHeight="50sp"
@@ -21,10 +21,11 @@
     <com.pns.touchcollector.EditTextKeyListener
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/fke_textView"
-        android:inputType="textMultiLine"
+        android:id="@+id/numeric_editText"
+        android:inputType="number"
         android:ems="10"
-        android:id="@+id/fke_editText"
-        android:layout_alignParentLeft="true" />
+        android:layout_alignBottom="@id/numeric_textView"
+        android:layout_alignParentLeft="true"
+        android:digits="0123456789" />
 
 </RelativeLayout>
