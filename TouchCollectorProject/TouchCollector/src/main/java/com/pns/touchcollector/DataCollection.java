@@ -41,7 +41,11 @@ public class DataCollection {
         aAccel = new AccessAccelerometer(sManager);
         kCollector = new KeyCollector(r);
 
-        collectors = array(aGyro, aAccel, aRecorder, kCollector);
+        collectors = new DataCollector[4];
+        collectors[0] = aGyro;
+        collectors[1] = aAccel;
+        collectors[2] = aRecorder;
+        collectors[3] = kCollector;
     }
 
     public void start() {
@@ -73,9 +77,8 @@ public class DataCollection {
         public Data getData();
     }
 
-    static abstract class DataStreamCollector<Event> extends DataCollector<ArrayList<Event>> {
+    static abstract class DataStreamCollector<Event> implements DataCollector<ArrayList<Event>> {
         private final LinkedBlockingQueue<Event> q = new LinkedBlockingQueue<Event>();
-
         protected void registerEvent(Event d) {
             try {
                 q.put(d);
