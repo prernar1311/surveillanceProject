@@ -14,6 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.pns.touchcollector.DataCollection.DataSession;
+
 public class InputCollection extends Activity {
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -70,9 +72,6 @@ public class InputCollection extends Activity {
      * one of the sections/tabs/pages.
      */
     public static class SectionsPagerAdapter extends FragmentPagerAdapter {
-        TextInputFragment tif = new TextInputFragment();
-        ButtonGridFragment bgf = new ButtonGridFragment();
-
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
@@ -84,39 +83,67 @@ public class InputCollection extends Activity {
             return (position == 1) ? new ButtonGridFragment() : new TextInputFragment();
         }
 
+        public static class ButtonGridFragment extends TextInputFragment {
+            protected static final int layout_id = R.layout.numeric_input;
+        }
+
         public static class TextInputFragment extends Fragment {
-            private KeyCollector kCollector;
+            protected static final int layout_id = R.layout.fragment_keyboard_entry;
+            Activity activity;
+            DataCollection dc;
+            View view;
+
             public TextInputFragment() { super(); }
+
+            @Override
+            public void onAttach(Activity activity) {
+                super.onAttach(activity);
+                this.activity = activity;
+            }
 
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
                     Bundle savedInstanceState) {
-                //EditTextKeyRegister etkr =
-                //        ((EditTextKeyRegister) findViewById(R.id.numeric_editText));
+                super.onCreateView(inflater, container, savedInstanceState);
 
                 // Inflate the layout for this fragment
-                return inflater.inflate(R.layout.fragment_keyboard_entry, container, false);
+                this.view = inflater.inflate(R.layout.fragment_keyboard_entry, container, false);
+                return this.view;
+            }
+
+            @Override
+            public void onActivityCreated(Bundle sIS) {
+                super.onActivityCreated(sIS);
+                if (view == null) {
+                    throw new IllegalStateException("View not available.");
+                }
+                EditTextKeyRegister etkr = ((EditTextKeyRegister)
+                        this.view.findViewById(R.id.numeric_editText));
+                if (this.activity == null) {
+                    throw new IllegalStateException("Activity not available.");
+                }
+                if (etkr == null) {
+                    throw new IllegalStateException("Activity not available.");
+                }
+                dc = new DataCollection(this.activity, etkr);
+                dc.start();
             }
 
             @Override
             public void onPause() {
                 super.onPause();
-            }
-
-            public void onKeyIme(int keyCode, KeyEvent event) {
-
+                DataSession ds = dc.stopAndGetSession();
             }
         }
 
-        public static class ButtonGridFragment extends Fragment {
+        /*public static class ButtonGridFragment extends Fragment {
             public ButtonGridFragment() { super(); }
 
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
                     Bundle savedInstanceState) {
-
                 //((EditTextKeyRegister) findViewById(R.layout.numeric_editText))
                 //        .setKeyImeListener(this);
 
@@ -128,7 +155,7 @@ public class InputCollection extends Activity {
             @Override
             public void onPause() {
                 super.onPause();}
-        }
+        }*/
 
         @Override
         public int getCount() {
