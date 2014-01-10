@@ -7,11 +7,11 @@ import android.hardware.SensorManager;
 
 import com.pns.touchcollector.InputCollection.DataStreamCollector;
 
-public class AccessGyroscope extends DataStreamCollector<SensorEvent> implements
+public class AccessAccelerometer extends DataStreamCollector<SensorEvent> implements
         SensorEventListener {
     private final SensorManager sManager;
 
-    public AccessGyroscope(SensorManager sm) {
+    public AccessAccelerometer(SensorManager sm) {
         sManager = sm;
     }
 
@@ -20,7 +20,7 @@ public class AccessGyroscope extends DataStreamCollector<SensorEvent> implements
          *  the callbacks defined in this class, and gather the sensor
          *  information as quickly as possible */
         sManager.registerListener(this,
-            sManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
+            sManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION),
             SensorManager.SENSOR_DELAY_FASTEST);
     }
 
@@ -34,8 +34,7 @@ public class AccessGyroscope extends DataStreamCollector<SensorEvent> implements
     }
 
     @Override
-    public void onSensorChanged(SensorEvent event)
-    {
+    public void onSensorChanged(SensorEvent event) {
         assert event.values.length == 3;
         //if sensor is unreliable, ignore event
         if (event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
