@@ -84,7 +84,7 @@ public class DataCollection {
         private final String recording;
         private final long startTime;
 
-        private final JSONObject j;
+        private JSONObject j;
 
         public DataSession(List<SensorEvent> Gyro, List<SensorEvent> Accel,
                            String Mic, List<KeyCodeEvent> Keys, long startingTimestamp) {
@@ -92,9 +92,11 @@ public class DataCollection {
             accel = Accel;
             recording = Mic;
             startTime = startingTimestamp;
+            this.keys = Keys;
             try {
                 j = buildSerializedEvents();
             } catch (JSONException e) {
+                j = null;
                 throw new RuntimeException(e);
             }
         }
