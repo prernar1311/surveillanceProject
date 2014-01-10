@@ -12,23 +12,31 @@ package com.pns.touchcollector;
 
 import android.content.Context;
 import android.media.MediaRecorder;
-import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.LinearLayout;
 
 import java.io.IOException;
 
+import com.pns.touchcollector.InputCollection.DataCollector;
 
-public class AudioRecorder  {
+/** Record audio from the MIC audio source. Procedure:
+ *
+ *      AudioRecorder ar = new AudioRecorder();
+ *      ar.startRecording();
+ *      ar.stopRecording();
+ *      String recordingFilename = ar.getRecording();
+ *
+ *      ar = new AudioRecorder();
+ *      ...
+ *
+ *      */
+public class AudioRecorder implements DataCollector<String> {
     private static final String LOG_TAG = "AudioRecorder";
     private static final int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
     private String mFileName = null;
+    private MediaRecorder mRecorder;
 
-    private boolean recording;
+    private boolean recordingNow;
     private boolean startedRecording;
 
     private void onRecord(boolean start) {
@@ -39,7 +47,9 @@ public class AudioRecorder  {
         }
     }
 
-    private void startRecording() {
+    public void startRecording() {
+        if (startedRecording)
+            throw new IllegalStateException("This instance already made a recording.");
         mRecorder = new MediaRecorder();
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
@@ -57,36 +67,12 @@ public class AudioRecorder  {
         recordingNow = true;
     }
 
-    private void stopRecording() {
+    public void stopRecording() {
         mRecorder.stop();
         mRecorder.release();
         mRecorder = null;
         recordingNow = false;
     }
-
-/*
- *    class RecordButton extends Button {
- *        boolean mStartRecording = true;
- *
- *        OnClickListener clicker = new OnClickListener() {
- *            public void onClick(View v) {
- *                onRecord(mStartRecording);
- *                if (mStartRecording) {
- *                    setText("Stop recording");
- *                } else {
- *                    setText("Start recording");
- *                }
- *                mStartRecording = !mStartRecording;
- *            }
- *        };
- *
- *        public RecordButton(Context ctx) {
- *            super(ctx);
- *            setText("Start recording");
- *            setOnClickListener(clicker);
- *        }
- *    }
- */
 
     public AudioRecorder() {
         final long lNow = System.currentTimeMillis() / 1000L;
@@ -95,16 +81,11 @@ public class AudioRecorder  {
     }
 
     public String getRecording() {
-        if (recordingNow) throw new StillRecordingException();
+        if (recordingNow) throw new IllegalStateException("Still recording audio");
         return mFileName;
     }
 
-    public void onPause() {
-        if (mRecorder != null) {
-            mRecorder.release();
-            mRecorder = null;
-        }
+    public String getData() {
+        return getRecording();
     }
-
-    public class StillRecordingException extends Exception {}
 }

@@ -1,16 +1,16 @@
 package com.pns.touchcollector;
 
-import java.util.Locale;
-
 import android.app.Activity;
-import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.app.FragmentTransaction;
-import android.support.v13.app.FragmentPagerAdapter;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,8 +18,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class InputCollection extends Activity {
+import org.json.*;
 
+import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+
+class InputCollection extends Activity {
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -53,7 +59,7 @@ public class InputCollection extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        
+
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.input_collection, menu);
         return true;
@@ -71,13 +77,152 @@ public class InputCollection extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    
+    static abstract class DataStreamCollector<Event> implements DataCollector<List<Event>> {
+        private final LinkedBlockingQueue<Event> q = new LinkedBlockingQueue<Event>();
+
+        protected void registerEvent(Event d) {
+            try {
+                q.put(d);
+            } catch (InterruptedException e) {
+                try {
+                    q.put(d);
+                } catch (InterruptedException f) {
+                    Log.e("DataStreamCollector",
+                            "Interrupted while trying to enqueue event " + d.toString(),
+                            e);
+                }
+            }
+        }
+
+        /** Flushes old data and returns in an ordered list. */
+        public List<Event> getData() {
+            List<Event> l = new ArrayList<Event>();
+            q.drainTo(l);
+            return l;
+        }
+    }
+
+    static interface DataCollector <Data> {
+        public void startRecording();
+        public void stopRecording();
+        public Data getData();
+    }
+
+    static class DataCollectorSessionManager {
+        private SensorManager sManager;
+
+        private AccessGyroscope aGyro;
+        private AudioRecorder aRecorder;
+        private AccessAccelerometer aAccel;
+
+        private DataCollector[] collectors;
+
+        List<SensorEvent> gyroEvents;
+        List<SensorEvent> accelEvents;
+        String recordingFilename;
+        long startTime;
+
+
+        public DataCollectorSessionManager(Context context) {
+            sManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
+            aGyro = new AccessGyroscope(sManager);
+            aAccel = new AccessAccelerometer(sManager);
+
+            collectors = array(aGyro, aAccel, aRecorder);
+        }
+
+        public void start() {
+            startTime = System.currentTimeMillis() / 1000L;
+            for (DataCollector c : collectors)
+                c.startRecording();
+        }
+
+        public DataSession stopAndGetSession() {
+            for (DataCollector c : collectors)
+                c.stopRecording();
+
+            gyroEvents = aGyro.getData();
+            accelEvents = aAccel.getData();
+            recordingFilename = aRecorder.getData();
+
+            return new DataSession(gyroEvents, accelEvents, recordingFilename, startTime);
+        }
+
+        static class DataSession {
+            private final List<SensorEvent> gyro;
+            private final List<SensorEvent> accel;
+            private final String recording;
+            private final long startTime;
+
+            private final JSONObject j;
+
+            public DataSession(List<SensorEvent> Gyro, List<SensorEvent> Accel, String Mic,
+                    long startingTimestamp) {
+                gyro = Gyro;
+                accel = Accel;
+                recording = Mic;
+                startTime = startingTimestamp;
+                try {
+                    j = buildSerializedEvents();
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public JSONObject serializedEvents() {
+                return j;
+            }
+
+            private JSONObject buildSerializedEvents() throws JSONException {
+                return new JSONObject()
+                        .put("startTimestamp", startTime)
+                        .put("gyro",          serializeSensors(gyro,  gyroToJSON))
+                        .put("accelerometer", serializeSensors(accel, accelToJSON));
+            }
+
+            private static JSONObject serializeSensors(List<SensorEvent> le, EventJSONer converter)
+                    throws JSONException {
+                return new JSONObject()
+                        .put("events", eventListToJSON(le, converter))
+                        .put("name", le.size() > 0 ? le.get(0).sensor.getName() : "no_events");
+            }
+
+            EventJSONer accelToJSON = new EventJSONer() {
+                public JSONObject toJSON(SensorEvent se) throws JSONException {
+                    float[] vals = se.values;
+                    return new JSONObject()
+                        .put("accuracy", se.accuracy)
+                        .put("timestamp", se.timestamp)
+                        .put("x", vals[0])
+                        .put("y", vals[1])
+                        .put("z", vals[2]);
+                }
+            };
+
+            EventJSONer gyroToJSON = accelToJSON;
+
+            private static JSONArray eventListToJSON(List<SensorEvent> le, EventJSONer converter)
+                    throws JSONException {
+                JSONArray a = new JSONArray();
+                for (SensorEvent e : le) {
+                    a.put(converter.toJSON(e));
+                }
+                return a;
+            }
+
+            private interface EventJSONer {
+                JSONObject toJSON(SensorEvent e) throws JSONException;
+            }
+        }
+    }
 
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
+        TextInputFragment tif = new TextInputFragment();
+        ButtonGridFragment bgf = new ButtonGridFragment();
 
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
@@ -91,11 +236,21 @@ public class InputCollection extends Activity {
             return new TextInputFragment();
         }
 
+        /**
+         * {@link Fragment} Superclass handling the data collection tasks common to both of our
+         * views - microphone, gyroscope, accelerometer, anything else that may come up. Subclasses
+         * should
+         */
+        //public class SurveilDataFragment extends Fragment {
+        //    @Override
+        //public View onCreateView(Layou)
+        //}
+
         public class TextInputFragment extends Fragment {
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                     Bundle savedInstanceState) {
+                    Bundle savedInstanceState) {
                 // Inflate the layout for this fragment
                 return inflater.inflate(R.layout.fragment_keyboard_entry, container, false);
             }
@@ -105,7 +260,7 @@ public class InputCollection extends Activity {
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                     Bundle savedInstanceState) {
+                    Bundle savedInstanceState) {
                 // Inflate the layout for this fragment
                 return inflater.inflate(R.layout.activity_button_grid_layout, container, false);
             }
@@ -167,4 +322,8 @@ public class InputCollection extends Activity {
         }
     }
 
+    /** Magic array literals */
+    static  <T> T[] array(T... elems) {
+        return elems;
+    }
 }
