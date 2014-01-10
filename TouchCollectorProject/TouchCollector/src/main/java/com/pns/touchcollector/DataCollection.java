@@ -108,6 +108,7 @@ public class DataCollection {
         private JSONObject buildSerializedEvents() throws JSONException {
             return new JSONObject()
                     .put("startTimestamp", startTime)
+                    .put("mic_filename", recording)
                     .put("gyro",          serializeSensors(gyro,  gyroToJSON))
                     .put("accelerometer", serializeSensors(accel, accelToJSON))
                     .put("keys", serializeKeycodes(keys));
@@ -130,7 +131,7 @@ public class DataCollection {
                     .put("name", le.size() > 0 ? le.get(0).sensor.getName() : "no_events");
         }
 
-        EventJSONer<SensorEvent> accelToJSON = new EventJSONer<SensorEvent>() {
+        private EventJSONer<SensorEvent> accelToJSON = new EventJSONer<SensorEvent>() {
             public JSONObject toJSON(SensorEvent se) throws JSONException {
                 float[] vals = se.values;
                 return new JSONObject()
@@ -142,7 +143,7 @@ public class DataCollection {
             }
         };
 
-        EventJSONer<SensorEvent> gyroToJSON = accelToJSON;
+        private EventJSONer<SensorEvent> gyroToJSON = accelToJSON;
 
         private static JSONArray eventListToJSON(List<SensorEvent> le, EventJSONer<SensorEvent> converter)
                 throws JSONException {
