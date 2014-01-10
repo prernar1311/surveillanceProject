@@ -88,8 +88,8 @@ class InputCollection extends Activity {
                     q.put(d);
                 } catch (InterruptedException f) {
                     Log.e("DataStreamCollector",
-                          "Interrupted while trying to enqueue event " + d.toString(),
-                          e);
+                            "Interrupted while trying to enqueue event " + d.toString(),
+                            e);
                 }
             }
         }
@@ -120,7 +120,6 @@ class InputCollection extends Activity {
         List<SensorEvent> gyroEvents;
         List<SensorEvent> accelEvents;
         String recordingFilename;
-
         long startTime;
 
 
@@ -138,7 +137,7 @@ class InputCollection extends Activity {
                 c.startRecording();
         }
 
-        public DataSession stop () {
+        public DataSession stopAndGetSession() {
             for (DataCollector c : collectors)
                 c.stopRecording();
 
@@ -146,56 +145,73 @@ class InputCollection extends Activity {
             accelEvents = aAccel.getData();
             recordingFilename = aRecorder.getData();
 
-            return new DataSession(gyroEvents, accelEvents, recordingFilename);
+            return new DataSession(gyroEvents, accelEvents, recordingFilename, startTime);
         }
 
-        class DataSession {
+        static class DataSession {
             private final List<SensorEvent> gyro;
             private final List<SensorEvent> accel;
             private final String recording;
+            private final long startTime;
 
-            private JSONObject j;
+            private final JSONObject j;
 
             public DataSession(List<SensorEvent> Gyro, List<SensorEvent> Accel, String Mic,
-                               long startTime) {
+                    long startingTimestamp) {
                 gyro = Gyro;
                 accel = Accel;
                 recording = Mic;
-            }
-
-            public JSONObject serializedEvents() {
-                if (j != null)
-                    return j;
-                j.put("startTimestamp", startTime);
-                j.put("gyroEvents", gyroToJSON(Gyro));
-                j.put("accelEvents", accelToJSON(   ))
-            }
-
-            private static JSONObject commonValues(SensorEvent se) {
-                return new JSONObject()
-                        .put("accuracy", se.accuracy)
-                        .put("timestamp", se.timestamp);
-            }
-
-            EventJSONer accelToJSON = new EventJSONer() {
-                JSONObject toJSON(SensorEvent se) {
-                    JSONObject j = new JSONObject();
-                    j.put("accuracy", se.accuracy);
+                startTime = startingTimestamp;
+                try {
+                    j = buildSerializedEvents();
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
                 }
             }
 
-            private JSONArray evenListToJSON(List<SensorEvent> le, EventJSONer converter) {
+            public JSONObject serializedEvents() {
+                return j;
+            }
+
+            private JSONObject buildSerializedEvents() throws JSONException {
+                return new JSONObject()
+                        .put("startTimestamp", startTime)
+                        .put("gyro",          serializeSensors(gyro,  gyroToJSON))
+                        .put("accelerometer", serializeSensors(accel, accelToJSON));
+            }
+
+            private static JSONObject serializeSensors(List<SensorEvent> le, EventJSONer converter)
+                    throws JSONException {
+                return new JSONObject()
+                        .put("events", eventListToJSON(le, converter))
+                        .put("name", le.size() > 0 ? le.get(0).sensor.getName() : "no_events");
+            }
+
+            EventJSONer accelToJSON = new EventJSONer() {
+                public JSONObject toJSON(SensorEvent se) throws JSONException {
+                    float[] vals = se.values;
+                    return new JSONObject()
+                        .put("accuracy", se.accuracy)
+                        .put("timestamp", se.timestamp)
+                        .put("x", vals[0])
+                        .put("y", vals[1])
+                        .put("z", vals[2]);
+                }
+            };
+
+            EventJSONer gyroToJSON = accelToJSON;
+
+            private static JSONArray eventListToJSON(List<SensorEvent> le, EventJSONer converter)
+                    throws JSONException {
                 JSONArray a = new JSONArray();
                 for (SensorEvent e : le) {
                     a.put(converter.toJSON(e));
                 }
+                return a;
             }
 
-            interface EventJSONer {
-                JSONObject toJSON(SensorEvent e);
-            }
-
-            private JSONObject accelToJSON(SensorEvent accelEvent) {
+            private interface EventJSONer {
+                JSONObject toJSON(SensorEvent e) throws JSONException;
             }
         }
     }
@@ -234,7 +250,7 @@ class InputCollection extends Activity {
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                     Bundle savedInstanceState) {
+                    Bundle savedInstanceState) {
                 // Inflate the layout for this fragment
                 return inflater.inflate(R.layout.fragment_keyboard_entry, container, false);
             }
@@ -244,7 +260,7 @@ class InputCollection extends Activity {
             // Button Grid input view
             @Override
             public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                     Bundle savedInstanceState) {
+                    Bundle savedInstanceState) {
                 // Inflate the layout for this fragment
                 return inflater.inflate(R.layout.activity_button_grid_layout, container, false);
             }
@@ -298,7 +314,7 @@ class InputCollection extends Activity {
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
+                Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_input_collection, container, false);
             TextView textView = (TextView) rootView.findViewById(R.id.section_label);
             textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
