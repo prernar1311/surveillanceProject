@@ -1,6 +1,10 @@
 package com.pns.touchcollector;
 
+
+import android.content.Context;
+import android.util.AttributeSet;
 import android.view.KeyEvent;
+
 
 public class EditTextKeyListener extends android.widget.EditText {
     private KeyImeChange keyImeChangeListener;
