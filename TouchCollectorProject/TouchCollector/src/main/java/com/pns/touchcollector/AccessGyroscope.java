@@ -1,12 +1,14 @@
 package com.pns.touchcollector;
 
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
-public class AccessGyroscope extends AccessSensor;
-    protected int getSensorType() {
-        return SENSOR.TYPE_ORIENTATION;
+public class AccessGyroscope extends AccessSensor {
+    public AccessGyroscope(SensorManager sm) {
+        super(sm);
     }
+    protected int getSensorType() {
+        return Sensor.TYPE_ORIENTATION;
+    }
+    protected String getName() { return "SensorGyroscope"; }
 }

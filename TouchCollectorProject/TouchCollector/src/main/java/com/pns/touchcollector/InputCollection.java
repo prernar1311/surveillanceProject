@@ -7,15 +7,13 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.view.KeyEvent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
-import com.pns.touchcollector.DataCollection.DataSession;
 
 public class InputCollection extends Activity {
     /**
@@ -81,25 +79,47 @@ public class InputCollection extends Activity {
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-            return (position == 1) ? new ButtonGridFragment() : new TextInputFragment();
+            return (position == 0) ? new TextInputFragment() : new ButtonGridFragment();
         }
 
         public static class ButtonGridFragment extends TextInputFragment {
-            protected static final int layout_id = R.layout.numeric_input;
+            protected static final int LAYOUT_ID = R.layout.numeric_input;
+            protected static final int VIEW_ID = R.id.numeric_etkr;
+
+            protected static int getLayoutId() {
+                return R.layout.numeric_input;
+            }
+            protected static int getViewId() {   return R.id.numeric_etkr; }
         }
 
         public static class TextInputFragment extends Fragment {
-            protected static final int layout_id = R.layout.fragment_keyboard_entry;
+            protected static final String LTAG = "TIFFragment";
+            protected static final int LAYOUT_ID = R.layout.fragment_keyboard_entry;
+            protected static final int VIEW_ID = R.id.fke_etkr;
             Context context;
             DataCollection dc;
             View view;
 
-            public TextInputFragment() { super(); }
+            public TextInputFragment() {
+                super();
+                Log.d(LTAG, ":constructor");
+            }
+
+            protected static int getLayoutId() {
+                return R.layout.fragment_keyboard_entry;
+            }
+            protected static int getViewId() {   return R.id.fke_etkr; }
 
             @Override
             public void onAttach(Activity activity) {
                 super.onAttach(activity);
                 this.context = activity;
+
+                if (context == null) {
+                    Log.d(LTAG , ":onAttach : Attached to null activity.");
+                    System.exit(1);
+                } else
+                    Log.d(LTAG, ":onAttach :" + context.toString());
             }
 
             // Button Grid input view
@@ -108,37 +128,60 @@ public class InputCollection extends Activity {
                     Bundle savedInstanceState) {
                 super.onCreateView(inflater, container, savedInstanceState);
 
+                Log.d(LTAG, ":oncreateview");
+
                 // Inflate the layout for this fragment
-                this.view = inflater.inflate(R.layout.fragment_keyboard_entry, container, false);
+                Log.i(LTAG, toString() + " inflating " + getLayoutId());
+                view = inflater.inflate(getLayoutId(), container, false);
+
+                if (context == null)
+                    context = view.getContext();
+
                 return this.view;
             }
 
             @Override
             public void onActivityCreated(Bundle sIS) {
+                Log.d(LTAG, "hello from onactivitycreated 1");
+
                 super.onActivityCreated(sIS);
                 if (view == null) {
                     throw new IllegalStateException("View not available.");
                 }
-                EditTextKeyRegister etkr = ((EditTextKeyRegister)
-                        this.view.findViewById(R.id.numeric_editText));
+                EditTextKeyRegister etkr =
+                        (EditTextKeyRegister) this.view.findViewById(getViewId());
+                Log.d(LTAG, "onActivityCreated: post finding etkr 2");
+
                 if (etkr == null) {
-                        throw new IllegalStateException("Activity not available.");
+                        Log.d("DataCollector", "etkr not available");
+                        // throw new IllegalStateException("etkr view not available.");
                 }
+
                 if (context == null)
                     context = getActivity();
+
                 if (context == null)
                     context = view.getContext();
-                if (context == null) {
-                    throw new IllegalStateException("Activity not available.");
+
+                if (context != null) {
+                    Log.d(LTAG, "Woohoo! Starting data collection.");
+                    dc = new DataCollection(context, etkr, Integer.toString(getLayoutId()));
+                    dc.start();
+                } else {
+                    Log.d(LTAG, "Not starting DataCollection.");
                 }
-                dc = new DataCollection(context, etkr);
-                dc.start();
             }
 
             @Override
             public void onPause() {
                 super.onPause();
-                DataSession ds = dc.stopAndGetSession();
+                if (dc != null) {
+                    Log.v(LTAG, "onPause: Getting recorded input data.");
+                    dc.stopAndGetSession();
+                }
+                else {
+                    Log.v(LTAG, "onPause: Never got recorded input data.");
+                }
             }
         }
 

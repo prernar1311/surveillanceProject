@@ -5,23 +5,27 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import com.pns.touchcollector.DataCollection.SensorUnavailableException;
+
 abstract class AccessSensor extends DataStreamCollector<SensorEvent> implements
         SensorEventListener {
     protected final SensorManager sManager;
-    protected final Sensor sensor;
+    protected Sensor sensor;
 
     public AccessSensor(SensorManager sm) {
         if (sm == null) {
-            throw new IllegalArgumentException("SensorManager was null.")
+            throw new IllegalArgumentException("SensorManager was null.");
         }
         sManager = sm;
         sensor = sm.getDefaultSensor(getSensorType());
     }
 
     /** Get the sensor type for this sensor (from {@link Sensor}) */
-    public abstract int getSensorType();
+    protected abstract int getSensorType();
+    /** Get the name for this sensor. */
+    protected abstract String getName();
 
-    public void startRecording() throws SensorUnavailableException {
+    public void startRecording(String s) throws SensorUnavailableException {
         if (sensor == null) sensor = sManager.getDefaultSensor(getSensorType());
         if (sensor == null) {
             throw new SensorUnavailableException("Could not access sensor " + getSensorType());
@@ -61,6 +65,4 @@ abstract class AccessSensor extends DataStreamCollector<SensorEvent> implements
  *                   "Orientation Z (Yaw) :"+ Float.toString(event.values[0]));
  */
     }
-
-    public static class SensorUnavailableException extends Exception {}
 }

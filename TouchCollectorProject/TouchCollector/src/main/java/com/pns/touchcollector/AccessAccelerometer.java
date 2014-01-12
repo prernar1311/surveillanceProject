@@ -1,11 +1,17 @@
 package com.pns.touchcollector;
 
 import android.hardware.Sensor;
+import android.hardware.SensorManager;
 
 public class AccessAccelerometer extends AccessSensor {
-    private static final int SENSOR_TYPE = Sensor.TYPE_LINEAR_ACCELERATION;
+    public AccessAccelerometer(SensorManager sm) {
+        super(sm);
+    }
 
     protected int getSensorType() {
-        return SENSOR_TYPE;
+        return Sensor.TYPE_LINEAR_ACCELERATION;
+    }
+    protected String getName() {
+        return "AccelerometerSensor";
     }
 }

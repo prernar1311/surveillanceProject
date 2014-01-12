@@ -24,7 +24,7 @@ public class KeyCollector extends DataStreamCollector<KeyCodeEvent>
         register = r;
     }
 
-    public void startRecording() {
+    public void startRecording(String s) {
         register.setKeyImeListener(this);
     }
 
