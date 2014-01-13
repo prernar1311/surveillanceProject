@@ -1,7 +1,10 @@
 package com.pns.touchcollector;
 
+import android.view.MotionEvent;
+
 /**
  * Created by nicolascrowell on 2014/1/12.
  */
-public class TouchListener {
+interface TouchListener {
+    public void onTouch(MotionEvent m);
 }
