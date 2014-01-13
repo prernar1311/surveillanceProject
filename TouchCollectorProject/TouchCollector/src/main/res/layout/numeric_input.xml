@@ -21,7 +21,7 @@
     <com.pns.touchcollector.EditTextKeyRegister
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/numeric_editText"
+        android:id="@+id/numeric_etkr"
         android:inputType="number"
         android:ems="10"
         android:layout_alignBottom="@id/numeric_textView"

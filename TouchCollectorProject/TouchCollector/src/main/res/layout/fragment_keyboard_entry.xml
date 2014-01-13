@@ -24,7 +24,7 @@
         android:layout_below="@id/fke_textView"
         android:inputType="textMultiLine"
         android:ems="10"
-        android:id="@+id/fke_editText"
+        android:id="@+id/fke_etkr"
         android:layout_alignParentLeft="true" />
 
 </RelativeLayout>
