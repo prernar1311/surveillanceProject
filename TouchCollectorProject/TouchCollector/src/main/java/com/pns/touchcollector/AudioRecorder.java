@@ -14,10 +14,15 @@ import android.media.MediaRecorder;
 import android.os.Environment;
 import android.util.Log;
 
-import java.io.IOException;
-
 import com.pns.touchcollector.DataCollection.DataCollector;
 import com.pns.touchcollector.DataCollection.SensorUnavailableException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+
 
 /** Record audio from the MIC audio source. Procedure:
  *
@@ -100,12 +105,18 @@ public class AudioRecorder implements DataCollector<String> {
         }
     }
 
-    public String getRecording() {
+    private String getRecording() {
         if (recordingNow) throw new IllegalStateException("Still recording audio");
         return baseFilename;
     }
 
     public String getData() {
         return getRecording();
+    }
+
+    public JSONObject getSerializedData() throws JSONException {
+        String s = getRecording();
+        JSONObject j = (s == null) ? (JSONObject) JSONObject.NULL : (new JSONObject()).put("name", s);
+        return j;
     }
 }

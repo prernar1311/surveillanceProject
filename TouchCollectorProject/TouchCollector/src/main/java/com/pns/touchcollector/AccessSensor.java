@@ -7,6 +7,10 @@ import android.hardware.SensorManager;
 
 import com.pns.touchcollector.DataCollection.SensorUnavailableException;
 
+import org.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONArray;
+
 abstract class AccessSensor extends DataStreamCollector<SensorEvent> implements
         SensorEventListener {
     protected final SensorManager sManager;
@@ -23,7 +27,7 @@ abstract class AccessSensor extends DataStreamCollector<SensorEvent> implements
     /** Get the sensor type for this sensor (from {@link Sensor}) */
     protected abstract int getSensorType();
     /** Get the name for this sensor. */
-    protected abstract String getName();
+    public abstract String getName();
 
     public void startRecording(String s) throws SensorUnavailableException {
         if (sensor == null) sensor = sManager.getDefaultSensor(getSensorType());
@@ -49,8 +53,7 @@ abstract class AccessSensor extends DataStreamCollector<SensorEvent> implements
     }
 
     @Override
-    public void onSensorChanged(SensorEvent event)
-    {
+    public void onSensorChanged(SensorEvent event) {
         assert event.values.length == 3;
         //if sensor is unreliable, ignore event
         if (event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
@@ -64,5 +67,23 @@ abstract class AccessSensor extends DataStreamCollector<SensorEvent> implements
  *                   "Orientation Y (Pitch) :"+ Float.toString(event.values[1]) +"\n"+
  *                   "Orientation Z (Yaw) :"+ Float.toString(event.values[0]));
  */
+    }
+
+
+    @Override
+    public DataConverter<SensorEvent> getConverter() {
+        return new DataConverter<SensorEvent>() {
+            // sensor timestamps are in nanoseconds of uptime
+            private static final long NANO2MILLI = 1000000L;
+            public JSONObject toJson(SensorEvent e) throws JSONException {
+                float[] vals = e.values;
+                return new JSONObject()
+                    .put("accuracy", e.accuracy)
+                    .put("timestamp", e.timestamp / NANO2MILLI)
+                    .put("x", vals[0])
+                    .put("y", vals[1])
+                    .put("z", vals[2]);
+            }
+        };
     }
 }

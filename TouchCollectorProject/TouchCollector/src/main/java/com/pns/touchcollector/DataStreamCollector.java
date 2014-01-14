@@ -2,9 +2,13 @@ package com.pns.touchcollector;
 
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONException;
 
 /**
 * Created by nicolascrowell on 2014/1/10.
@@ -24,10 +28,30 @@ abstract class DataStreamCollector<Event> implements DataCollection.DataCollecto
         }
     }
 
+    public abstract String getName();
+    /** Used to serialize the events. */
+    public abstract DataConverter<Event> getConverter();
+
     /** Flushes old data and returns in an ordered list. */
-    public List<Event> getData() {
-        List<Event> l = new ArrayList<Event>();
+    public synchronized ArrayList<Event> getData() {
+        ArrayList<Event> l = new ArrayList<Event>();
         q.drainTo(l);
         return l;
+    }
+
+    interface DataConverter <T> {
+        JSONObject toJson(T t) throws JSONException;
+    }
+
+    public JSONObject getSerializedData() throws JSONException {
+        List<Event> elist = getData();
+        JSONArray a = new JSONArray();
+
+        DataConverter<Event> converter = getConverter();
+        for (Event e : elist) {
+            a.put(converter.toJson(e));
+        }
+
+        return (new JSONObject()).put("events", a);
     }
 }

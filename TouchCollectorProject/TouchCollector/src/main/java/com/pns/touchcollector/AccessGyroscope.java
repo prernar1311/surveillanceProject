@@ -10,5 +10,5 @@ public class AccessGyroscope extends AccessSensor {
     protected int getSensorType() {
         return Sensor.TYPE_ORIENTATION;
     }
-    protected String getName() { return "SensorGyroscope"; }
+    public String getName() { return "SensorGyroscope"; }
 }

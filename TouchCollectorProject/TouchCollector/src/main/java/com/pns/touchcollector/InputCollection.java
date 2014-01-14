@@ -15,6 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.jcraft.jsch;
+
 public class InputCollection extends Activity {
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -177,7 +179,7 @@ public class InputCollection extends Activity {
                 super.onPause();
                 if (dc != null) {
                     Log.v(LTAG, "onPause: Getting recorded input data.");
-                    dc.stopAndGetSession();
+                    JSONObject j = dc.stopAndGetSession();
                 }
                 else {
                     Log.v(LTAG, "onPause: Never got recorded input data.");

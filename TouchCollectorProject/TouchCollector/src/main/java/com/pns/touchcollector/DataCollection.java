@@ -6,13 +6,12 @@ import android.hardware.SensorManager;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.pns.touchcollector.KeyCollector.KeyCodeEvent;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * Created by nicolascrowell on 2014/1/10.
@@ -28,13 +27,13 @@ public class DataCollection {
     private AccessAccelerometer aAccel;
     private KeyCollector kCollector;
 
-
     private DataCollector[] collectors;
+    private DataStreamCollector[] streamCollectors;
 
-    List<SensorEvent> gyroEvents;
-    List<SensorEvent> accelEvents;
+    //List<SensorEvent> gyroEvents;
+    //List<SensorEvent> accelEvents;
     String recordingFilename;
-    List<KeyCodeEvent> keyEvents;
+    //List<KeyEvent> keyEvents;
     long startTime;
 
     public DataCollection(Context context, EditTextKeyRegister r, String name) {
@@ -46,18 +45,18 @@ public class DataCollection {
         kCollector = new KeyCollector(r);
         this.name = name;
 
-        collectors = new DataCollector[4];
-        collectors[0] = aGyro;
-        collectors[1] = aAccel;
-        collectors[2] = aRecorder;
-        collectors[3] = kCollector;
-    }
+        streamCollectors = new DataStreamCollector[3];
+        collectors       = new DataCollector[4];
 
-/*
-    public DataCollection getInstance(Context context, EditTextKeyRegister r) {
-        if (instance == null) instance = new DataCollection(context, r);
-        return instance;
-    } */
+
+        /*streamCollectors = array(aGyro, aAccel, kCollector);
+        collectors = array(aGyro, aAccel, kCollector, aRecorder);*/
+
+        collectors[0] = streamCollectors[0] = aGyro;
+        collectors[1] = streamCollectors[1] = aAccel;
+        collectors[2] = streamCollectors[2] = kCollector;
+        collectors[3] = aRecorder;
+    }
 
     public void start() {
         startTime = SystemClock.uptimeMillis();
@@ -73,26 +72,46 @@ public class DataCollection {
         }
     }
 
-    public DataSession stopAndGetSession() {
+    public JSONObject stopAndGetSession() {
         for (DataCollector c : collectors) {
             if (c == null) throw new IllegalStateException("Had a null DataCollector at stop!");
             try {
                 c.stopRecording();
-            } catch (SensorUnavailableException s) {
+            }
+            catch (SensorUnavailableException s) {
                 Log.e(LTAG, "Sensor " + c + " failed at stop recording " + s.getMessage());
             }
-
         }
 
-        gyroEvents = aGyro.getData();
+        JSONObject j = new JSONObject();
+        jsonPutReliable(j, "startTime", startTime);
+        for (DataStreamCollector c : streamCollectors) {
+            JSONObject serialized;
+            try {
+                serialized = c.getSerializedData();
+            } catch (JSONException je) {
+                Log.w(LTAG, "Failed trying to serialize " + c.getName(), je);
+                serialized = (JSONObject) JSONObject.NULL;
+            }
+            jsonPutReliable(j, c.getName(), serialized);
+        }
+        jsonPutReliable(j, "mic_filename",
+                recordingFilename == null ? JSONObject.NULL : recordingFilename);
 
-        accelEvents = aAccel.getData();
+        return j;
+    }
 
-        recordingFilename = aRecorder.getData();
-
-        keyEvents = kCollector.getData();
-
-        return new DataSession(gyroEvents, accelEvents, recordingFilename, keyEvents, startTime);
+    static void jsonPutReliable(JSONObject j, String key, Object value) {
+        try {
+            j.put(key, value);
+        } catch (JSONException je) {
+            Log.w(LTAG, "Reliable json put failed: " + key, je);
+        }
+        try {
+            j.put(key, JSONObject.NULL);
+        } catch (JSONException je) {
+            Log.w(LTAG, "Reliable json failed to put placeholder.", je);
+        }
     }
 
     /** Magic array literals */
@@ -103,7 +122,7 @@ public class DataCollection {
     static interface DataCollector <Data> {
         public void startRecording(String s) throws SensorUnavailableException;
         public void stopRecording()  throws SensorUnavailableException;
-        public Data getData();
+        public JSONObject getSerializedData() throws JSONException;
     }
 
     static class SensorUnavailableException extends Exception {
@@ -113,88 +132,6 @@ public class DataCollection {
 
         public SensorUnavailableException(String s, Throwable t) {
             super(s, t);
-        }
-    }
-
-    static class DataSession {
-        private final List<SensorEvent> gyro;
-        private final List<SensorEvent> accel;
-        private final List<KeyCodeEvent> keys;
-        private final String recording;
-        private final long startTime;
-
-        private JSONObject j;
-
-        public DataSession(List<SensorEvent> Gyro, List<SensorEvent> Accel,
-                           String Mic, List<KeyCodeEvent> Keys, long startingTimestamp) {
-            gyro = Gyro;
-            accel = Accel;
-            recording = Mic;
-            startTime = startingTimestamp;
-            this.keys = Keys;
-            try {
-                j = buildSerializedEvents();
-            } catch (JSONException e) {
-                j = null;
-                throw new RuntimeException(e);
-            }
-        }
-
-        public JSONObject serializedEvents() {
-            return j;
-        }
-
-        private JSONObject buildSerializedEvents() throws JSONException {
-            return new JSONObject()
-                    .put("startTimestamp", startTime)
-                    .put("mic_filename",   recording == null ? JSONObject.NULL : recording)
-                    .put("gyro",           serializeSensors(gyro,  gyroToJSON))
-                    .put("accelerometer", serializeSensors(accel, accelToJSON))
-                    .put("keys", serializeKeycodes(keys));
-        }
-
-        private static JSONObject serializeKeycodes(List<KeyCodeEvent> l) throws JSONException {
-            JSONObject j = new JSONObject();
-            for (KeyCodeEvent kce : l) {;
-                j.accumulate("events", new JSONObject()
-                        .put("keycode", kce.e.getUnicodeChar())
-                        .put("time", kce.e.getEventTime()));
-            }
-            return j;
-        }
-
-        private static JSONObject serializeSensors(List<SensorEvent> le, EventJSONer<SensorEvent> converter)
-                throws JSONException {
-            return new JSONObject()
-                    .put("events", eventListToJSON(le, converter))
-                    .put("name", le.size() > 0 ? le.get(0).sensor.getName() : "no_events");
-        }
-
-        private EventJSONer<SensorEvent> accelToJSON = new EventJSONer<SensorEvent>() {
-            public JSONObject toJSON(SensorEvent se) throws JSONException {
-                float[] vals = se.values;
-                return new JSONObject()
-                    .put("accuracy", se.accuracy)
-                    .put("timestamp", se.timestamp / 1000L)
-                    .put("x", vals[0])
-                    .put("y", vals[1])
-                    .put("z", vals[2]);
-            }
-        };
-
-        private EventJSONer<SensorEvent> gyroToJSON = accelToJSON;
-
-        private static JSONArray eventListToJSON(List<SensorEvent> le, EventJSONer<SensorEvent> converter)
-                throws JSONException {
-            JSONArray a = new JSONArray();
-            for (SensorEvent e : le) {
-                a.put(converter.toJSON(e));
-            }
-            return a;
-        }
-
-        private interface EventJSONer<EventType> {
-            JSONObject toJSON(EventType e) throws JSONException;
         }
     }
 }
