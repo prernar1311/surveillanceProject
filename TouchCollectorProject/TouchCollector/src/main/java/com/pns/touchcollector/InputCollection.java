@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.AsyncTask;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -15,7 +16,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.jcraft.jsch;
+
+import org.json.JSONObject;
+import org.json.JSONException;
+
+import java.io.UnsupportedEncodingException;
+import java.io.ByteArrayInputStream;
+
+import com.pns.touchcollector.InputCollection.NamedJson;
+
+import com.jcraft.jsch.SftpException;
+import com.jcraft.jsch.JSchException;
+
 
 public class InputCollection extends Activity {
     /**
@@ -66,6 +78,16 @@ public class InputCollection extends Activity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+
+    static class NamedJson {
+        JSONObject j;
+        String name;
+        public NamedJson(JSONObject j, String name) {
+            this.j = j;
+            this.name = name;
+        }
     }
 
     /**
@@ -180,6 +202,30 @@ public class InputCollection extends Activity {
                 if (dc != null) {
                     Log.v(LTAG, "onPause: Getting recorded input data.");
                     JSONObject j = dc.stopAndGetSession();
+                    new AsyncTask<NamedJson, Void, Void>() {
+                       @Override
+                       protected Void doInBackground(NamedJson... n) {
+                           try {
+                           // TODO make pkey and ip resources
+                           Scp scp = new Scp("pkey", "sftp", "162.242.219.223");
+                           scp.cd("/home/sftp/json");
+                           String json = n[0].j.toString(2);
+                           scp.put(new ByteArrayInputStream(json.getBytes("UTF-8")), n[0].name);}
+                           catch (JSONException je) {
+                               Log.e("AsyncJsonTask", "couldn't send json", je);
+                           }
+                           catch (SftpException se) {
+                               Log.e("AsyncJsonTask", "couldn't send json", se);
+                           }
+                           catch (JSchException je) {
+                               Log.e("AsyncJsonTask", "couldn't send json", je);
+                           }
+                           catch (UnsupportedEncodingException ee) {
+                               Log.e("AsyncJsonTask", "couldn't send json", ee);
+                           }
+                           return null;
+                       }
+                    }.execute(new NamedJson(j, "datacollection")); // TODO determine names
                 }
                 else {
                     Log.v(LTAG, "onPause: Never got recorded input data.");
